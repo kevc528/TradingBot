@@ -1,5 +1,6 @@
 # TradingBot
 Stock trading bot using Alpaca API
+
 Data gathered from the bot will be stored in the database, BotData.db
 
 ### Setup
