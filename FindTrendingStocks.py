@@ -1,0 +1,35 @@
+from bs4 import BeautifulSoup
+import requests
+
+# def findTrendingStocks():
+
+# 	url = 'https://finance.yahoo.com/trending-tickers'
+# 	resp = requests.get(url)
+# 	html = resp.content
+# 	soup = BeautifulSoup(html, 'html.parser')
+# 	tr_tags = soup.find_all('tr')
+# 	td_tags = [tag.find('td') for tag in tr_tags]
+
+# 	symbols = [tag.find('a').text for tag in td_tags if tag != None and '=' not in tag.find('a').text and '^' not in tag.find('a').text]
+# 	print('run scrape')
+# 	fObj = open('watchlist.csv', 'w')
+# 	for s in symbols:
+# 		fObj.write(s + '\n')
+# 	fObj.close()
+
+def findTrendingStocks():
+
+	url = 'https://tradingstockalerts.com/PremiumAlerts/Momentum'
+	resp = requests.get(url)
+	html = resp.content
+	soup = BeautifulSoup(html, 'html.parser')
+	table = soup.find('table', {'id' : 'TABLE_1'})
+	tr_tags = table.find_all('tr')[1:]
+	td_tags = [tag.find_all('td')[1] for tag in tr_tags]
+
+	symbols = [tag.text.strip() for tag in td_tags if tag != None and '=' not in tag.text.strip() and '^' not in tag.text.strip()]
+	print('run scrape')
+	fObj = open('watchlist.csv', 'w')
+	for s in symbols:
+		fObj.write(s + '\n')
+	fObj.close()
