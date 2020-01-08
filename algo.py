@@ -8,8 +8,10 @@ from FindTrendingStocks import findTrendingStocks
 import datetime as dt
 from sklearn.linear_model import LinearRegression
 
+# portfolio stored as a dict for stock to number of stocks
 portfolio = {}
 
+# obtain the portfolio of stocks currently holding
 def initPortfolio():
 	try:
 		fObj = open('portfolio.csv')
@@ -22,9 +24,10 @@ def initPortfolio():
 		fObj = open('portfolio.csv', 'w')
 		fObj.close()
 
+# max num of stocks in portfolio
 MAX_SIZE = 30
 
-# up, low, width
+# returns up, low, width of 20 day bollinger bands
 def find20BBBounds(symbol):
 	df = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 40), end = datetime.now())
@@ -36,6 +39,7 @@ def find20BBBounds(symbol):
 	return (df.iloc[-1]['Upper Band'], df.iloc[-1]['Lower Band'], 
 	(df.iloc[-1]['Upper Band'] - df.iloc[-1]['Lower Band']) / df.iloc[-1]['20 Day MA'])	
 
+# returns up, low, width of 10 day bollinger bands
 def find10BBBounds(symbol):
 	df = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 40), end = datetime.now())
@@ -47,6 +51,7 @@ def find10BBBounds(symbol):
 	return (df.iloc[-1]['Upper Band'], df.iloc[-1]['Lower Band'], 
 	(df.iloc[-1]['Upper Band'] - df.iloc[-1]['Lower Band']) / df.iloc[-1]['10 Day MA'])		
 
+# uses linear regression to find the best fit lines for bands and price
 def findEquations(symbol):
 	df = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 60), end = datetime.now())
@@ -77,7 +82,7 @@ def findEquations(symbol):
 	return (BBModel.coef_[0][0], RTModel.coef_[0][0], BBModel2.coef_[0][0],
 		BBModel.intercept_[0], RTModel.intercept_[0], BBModel2.intercept_[0])
 
-# plotting bounds using bollinger bands method, for testing
+# plotting bounds using 10 day bollinger bands method, for testing
 def plotBBBounds10(symbol):
 	df = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 100), end = datetime.now())
@@ -102,10 +107,10 @@ def plotBBBounds10(symbol):
 	ax.set_xlabel('Date (Year/Month)')
 	ax.set_ylabel('Price(USD)')
 
-	# need to add legend
 	ax.legend()
 	plt.show()
 
+# plotting bounds using 20 day bollinger bands method, for testing
 def plotBBBounds20(symbol):
 	df = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 200), end = datetime.now())
@@ -134,6 +139,7 @@ def plotBBBounds20(symbol):
 	ax.legend()
 	plt.show()
 
+# finds the RSI for a stock
 def findRSI(symbol):
 	df = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 30), end = datetime.now())
@@ -156,12 +162,14 @@ def findRSI(symbol):
 	RSI = 100 - 100/(RS + 1)
 	return RSI
 
+# gets current price of stock, a little bit behind real time
 def getPrice(symbol):
 	price = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 5), end = datetime.now())
 	price = price.iloc[-1]['Close']
 	return price
 
+# decides what to do with the stock: buy, sell or hold
 def decide(symbol):
 	fObj = open('DayLog.csv', 'a')
 	upperBand, lowerBand, bandWidth = find10BBBounds(symbol)
@@ -180,9 +188,6 @@ def decide(symbol):
 			abs((upperI - realI)/upperI) < 0.02 and rsi > 20 and rsi < 60:
 		print('Upward Slope Buy ' + symbol)
 		action = 'buy'
-	# elif abs((lowerSlope - realSlope)/lowerSlope) < 0.25 and abs((lowerI - realI)/lowerI) < 0.2:
-	# 	print('Downward Slope Sell')
-	# 	action = 'sell'
 	elif ((realSlope - lowerSlope)/lowerSlope) < 0.1 and abs((lowerI - realI)/lowerI) < 0.02:
 		print('Downward Slope Sell ' + symbol)
 		action = 'sell'
