@@ -25,7 +25,18 @@ def initPortfolio():
 MAX_SIZE = 30
 
 # up, low, width
-def findBBBounds(symbol):
+def find20BBBounds(symbol):
+	df = web.DataReader(symbol, data_source = 'yahoo', 
+		start = datetime.now() - timedelta(days = 40), end = datetime.now())
+	df['20 Day MA'] = df['Adj Close'].rolling(window = 20).mean()
+	df['20 Day STD'] = df['Adj Close'].rolling(window = 20).std().apply(
+		lambda x: x * (math.sqrt(19) / math.sqrt(20)))
+	df['Upper Band'] = df['20 Day MA'] + 2 * df['20 Day STD']
+	df['Lower Band'] = df['20 Day MA'] - 2 * df['20 Day STD']
+	return (df.iloc[-1]['Upper Band'], df.iloc[-1]['Lower Band'], 
+	(df.iloc[-1]['Upper Band'] - df.iloc[-1]['Lower Band']) / df.iloc[-1]['20 Day MA'])	
+
+def find10BBBounds(symbol):
 	df = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 40), end = datetime.now())
 	df['10 Day MA'] = df['Adj Close'].rolling(window = 10).mean()
@@ -34,7 +45,7 @@ def findBBBounds(symbol):
 	df['Upper Band'] = df['10 Day MA'] + 1.5 * df['10 Day STD']
 	df['Lower Band'] = df['10 Day MA'] - 1.5 * df['10 Day STD']
 	return (df.iloc[-1]['Upper Band'], df.iloc[-1]['Lower Band'], 
-	(df.iloc[-1]['Upper Band'] - df.iloc[-1]['Lower Band']) / df.iloc[-1]['10 Day MA'])	
+	(df.iloc[-1]['Upper Band'] - df.iloc[-1]['Lower Band']) / df.iloc[-1]['10 Day MA'])		
 
 def findEquations(symbol):
 	df = web.DataReader(symbol, data_source = 'yahoo', 
@@ -153,38 +164,38 @@ def getPrice(symbol):
 
 def decide(symbol):
 	fObj = open('DayLog.csv', 'a')
-	upperBand, lowerBand, bandWidth = findBBBounds(symbol)
+	upperBand, lowerBand, bandWidth = find10BBBounds(symbol)
 	rsi = findRSI(symbol)
 	price = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 5), end = datetime.now())
 	price = price.iloc[-1]['Close']
 	upperSlope, realSlope, lowerSlope, upperI, realI, lowerI = findEquations(symbol)
+	nextDayUp = upperSlope + upperI
+	nextDayReal = realSlope + realI
+	nextDayLow = lowerSlope + lowerI
 
-	# could do distance between fit lines, but currently just testing slope
 	if len(portfolio) >= MAX_SIZE:
 		action = 'portfolio size large'
-	# elif abs((upperSlope - realSlope)/upperSlope) < 0.3 and abs((upperI - realI)/upperI) < 0.2 and rsi < 70:
-	# 	print('Upward Slope Buy')
-	# 	action = 'buy'
-	elif ((upperSlope - realSlope)/upperSlope) < 0.3 and upperSlope > 0 and abs((upperI - realI)/upperI) < 0.2 and rsi < 40:
+	elif abs((upperSlope - realSlope)/upperSlope) < 0.1 and upperSlope > 0 and 
+			abs((upperI - realI)/upperI) < 0.02 and rsi > 20 and rsi < 60:
 		print('Upward Slope Buy ' + symbol)
 		action = 'buy'
 	# elif abs((lowerSlope - realSlope)/lowerSlope) < 0.25 and abs((lowerI - realI)/lowerI) < 0.2:
 	# 	print('Downward Slope Sell')
 	# 	action = 'sell'
-	elif ((realSlope - lowerSlope)/lowerSlope) < 0.25 and abs((lowerI - realI)/lowerI) < 0.2:
+	elif ((realSlope - lowerSlope)/lowerSlope) < 0.1 and abs((lowerI - realI)/lowerI) < 0.02:
 		print('Downward Slope Sell ' + symbol)
 		action = 'sell'
-	elif bandWidth < 0.2 and rsi < 35:
-		print('Expecting surge buy ' + symbol)
-		action = 'buy'
-	elif price < lowerBand and rsi < 35:
+	elif price < lowerBand and rsi < 35 and (nextDayReal - nextDayLow)/abs(nextDayLow) > 0.01:
 		print('Low relative price buy ' + symbol)
 		action = 'buy'
-	elif price > upperBand and rsi > 70:
+	elif price > upperBand and rsi > 70 and abs((nextDayUp - nextDayReal)/nextDayUp) > 0.01:
 		print('High relative price sell ' + symbol)
 		action = 'sell'
-	elif bandWidth < 0.3 and rsi > 70:
+	elif bandWidth < 0.05 and rsi < 35 and rsi > 20:
+		print('Expecting surge buy ' + symbol)
+		action = 'buy'
+	elif bandWidth < 0.05 and rsi > 70:
 		print('Expecting drop sell ' + symbol)
 		action = 'sell'
 	elif bandWidth > 0.3 and rsi > 70:
