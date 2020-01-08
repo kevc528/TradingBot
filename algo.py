@@ -184,8 +184,8 @@ def decide(symbol):
 
 	if len(portfolio) >= MAX_SIZE:
 		action = 'portfolio size large'
-	elif abs((upperSlope - realSlope)/upperSlope) < 0.1 and upperSlope > 0 and 
-			abs((upperI - realI)/upperI) < 0.02 and rsi > 20 and rsi < 60:
+	elif (abs((upperSlope - realSlope)/upperSlope) < 0.1 and upperSlope > 0 and 
+			abs((upperI - realI)/upperI) < 0.02 and rsi > 20 and rsi < 60):
 		print('Upward Slope Buy ' + symbol)
 		action = 'buy'
 	elif ((realSlope - lowerSlope)/lowerSlope) < 0.1 and abs((lowerI - realI)/lowerI) < 0.02:
