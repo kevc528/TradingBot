@@ -54,7 +54,7 @@ def find10BBBounds(symbol):
 # uses linear regression to find the best fit lines for bands and price
 def findEquations(symbol):
 	df = web.DataReader(symbol, data_source = 'yahoo', 
-		start = datetime.now() - timedelta(days = 60), end = datetime.now())
+		start = datetime.now() - timedelta(days = 90), end = datetime.now())
 	df['20 Day MA'] = df['Adj Close'].rolling(window = 20).mean()
 	df['20 Day STD'] = df['Adj Close'].rolling(window = 20).std().apply(
 		lambda x: x * (math.sqrt(19) / math.sqrt(20)))
@@ -63,8 +63,8 @@ def findEquations(symbol):
 	df = df.reset_index()
 	df['Date'] = pd.to_datetime(df['Date'])
 	df['Date']= df['Date'].map(dt.datetime.toordinal)
-	df['Date'] = df['Date'] - df.iloc[-10]['Date']
-	prevChart = df.iloc[-10:]
+	df['Date'] = df['Date'] - df.iloc[-5]['Date']
+	prevChart = df.iloc[-5:]
 
 	BBModel = LinearRegression()
 	normalizedX = prevChart['Date'].values.reshape(-1, 1)
@@ -173,6 +173,7 @@ def getPrice(symbol):
 def decide(symbol):
 	fObj = open('DayLog.csv', 'a')
 	upperBand, lowerBand, bandWidth = find10BBBounds(symbol)
+	x, y, bandWidth = find20BBBounds(symbol)
 	rsi = findRSI(symbol)
 	price = web.DataReader(symbol, data_source = 'yahoo', 
 		start = datetime.now() - timedelta(days = 5), end = datetime.now())
@@ -184,11 +185,11 @@ def decide(symbol):
 
 	if len(portfolio) >= MAX_SIZE:
 		action = 'portfolio size large'
-	elif (abs((upperSlope - realSlope)/upperSlope) < 0.20 and upperSlope > 0 and 
+	elif (abs((upperSlope - realSlope)/upperSlope) < 0.2 and upperSlope > 0 and 
 			abs((upperI - realI)/upperI) < 0.02 and rsi > 20 and rsi < 60):
 		print('Upward Slope Buy ' + symbol)
 		action = 'buy'
-	elif ((realSlope - lowerSlope)/lowerSlope) < 0.20 and abs((lowerI - realI)/lowerI) < 0.02:
+	elif ((realSlope - lowerSlope)/lowerSlope) < 0.2 and abs((lowerI - realI)/lowerI) < 0.02:
 		print('Downward Slope Sell ' + symbol)
 		action = 'sell'
 	elif price < lowerBand and rsi < 35 and (nextDayReal - nextDayLow)/abs(nextDayLow) > 0.01:
