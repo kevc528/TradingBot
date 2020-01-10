@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 
+# scrapes for stocks off of yahoo finance trending
 # def findTrendingStocks():
 
 # 	url = 'https://finance.yahoo.com/trending-tickers'
@@ -17,6 +18,7 @@ import requests
 # 		fObj.write(s + '\n')
 # 	fObj.close()
 
+# scrapes for stocks off of high momentum charts
 # def findTrendingStocks():
 
 # 	url = 'https://tradingstockalerts.com/PremiumAlerts/Momentum'
@@ -34,6 +36,7 @@ import requests
 # 		fObj.write(s + '\n')
 # 	fObj.close()
 
+# scrapes most popular stocks from financial content
 def findTrendingStocks():
 
 	symbols = []
