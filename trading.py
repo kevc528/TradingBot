@@ -13,15 +13,18 @@ import time
 import csv
 from pandas_datareader._utils import RemoteDataError
 
+# alpaca api information, used for requests
 BASE_URL = 'https://paper-api.alpaca.markets'
 ACCOUNT_URL = '{}/v2/account'.format(BASE_URL)
 ORDERS_URL = '{}/v2/orders'.format(BASE_URL)
 HEADERS = {'APCA-API-KEY-ID' : API_KEY, 'APCA-API-SECRET-KEY' : SECRET_KEY}
 
+# returns json of information on the account, like equity, buying power, etc.
 def getAccountInfo():
 	r = requests.get(ACCOUNT_URL, headers = HEADERS)
 	return json.loads(r.content)
 
+# creates an order for either buy or sell
 def create_order(symbol, qty, side, type, time_in_force):
 	data = {
 		'symbol' : symbol,
@@ -37,6 +40,8 @@ def create_order(symbol, qty, side, type, time_in_force):
 	except NameError as e:
 		print(e)
 
+# get stocks on the watchlist and portfolio and save them in a set to determine
+# which stocks to watch		
 def getWatchList():
 	trending = []
 	fObj = open('watchlist.csv')
@@ -47,12 +52,14 @@ def getWatchList():
 	watchlist = set(watchlist)
 	return watchlist
 
+# updates the portfolio.csv file after transactions
 def updatePortfolio():
 	fObj = open('portfolio.csv', 'w')
 	for key in portfolio:
 		fObj.write(str(key) + ',' + str(portfolio[key]) + '\n')
 	fObj.close()
 
+# cycle function that will repeat (loop), gets stock data and decides what to do
 def cycle():
 	watchlist = getWatchList()
 	for symbol in watchlist:
